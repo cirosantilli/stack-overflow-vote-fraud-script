@@ -1,0 +1,8 @@
+cookies
+users.csv
+votes
+*.bak
+*.pyc
+*.sqlite3
+*.log
+*.xml
