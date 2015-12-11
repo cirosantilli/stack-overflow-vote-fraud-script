@@ -24,7 +24,7 @@ var domain = 'https://stackoverflow.com/'
 /* TODO find a decent way to get this done. */
 var upvote_sleep = 3000
 
-/* The question was deleted since the dump was made (not answer). */
+/* The question was deleted since the dump was made. */
 var exit_status_404 = 65
 /* TODO: the answer was deleted or the post locked. Implement. */
 var exit_status_no_upvote_arrow = 66
