@@ -52,7 +52,7 @@ var answer_id = casper.cli.get(4)
 As an argument because there is no better way to get the full path to this script
 http://stackoverflow.com/questions/16769057/how-to-get-currently-executed-file-directory-in-casperjs
 */
-var cookie_dir = casper.cli.get(5)
+var cookie_dir = casper.cli.get(5) + '/'
 
 var cookie_path = cookie_dir + user_id
 var question_url = domain + 'questions/' + question_id

@@ -31,6 +31,7 @@ import logging
 import os.path
 import sqlite3
 import subprocess
+import sys
 
 import common
 
@@ -44,8 +45,10 @@ exit_status_404 = 65
 exit_status_no_upvote_arrow = 66
 exit_status_human_verification = 67
 
+max_failures_today = 30
+
 if len(sys.argv) > 1:
-    casperjs_path = sys.argv[0]
+    casperjs_path = sys.argv[1]
 else:
     casperjs_path = '/home/ciro/.nvm/v0.10.26/bin/casperjs'
 
@@ -61,7 +64,7 @@ cursor = connection.cursor()
 with open(common.users_csv_path, 'r') as user_file:
     user_csver = csv.reader(user_file)
     for user_row in user_csver:
-        logging.debug('user = ' + str(tuple(user_row)))
+        logging.debug('user = ' + str(user_row))
         user_id, user_email, user_password = user_row
         if user_id != common.user_id_off:
             # TODO if we start running at midnight, we would overestimate the amount of votes used.
@@ -69,12 +72,13 @@ with open(common.users_csv_path, 'r') as user_file:
             now = datetime.datetime.utcnow()
             today_midnight = datetime.datetime(year=now.year, month=now.month, day=now.day)
             tomorrow_midnight = today_midnight + datetime.timedelta(days=1)
+            failures_today = 0
             votes_already_done_today = next(cursor.execute(
                     'SELECT COUNT(*) FROM votes ' +
                     'WHERE user_id = ? AND vote_time >= ? AND vote_time < ? AND script_status = ?',
                     (user_id, today_midnight, tomorrow_midnight, exit_status_success)))[0]
-            while votes_already_done_today < common.max_votes_per_day:
-                logging.debug('votes_already_done_today = ' + str(votes_already_done_today))
+            logging.debug('votes_already_done_today = ' + str(votes_already_done_today))
+            while votes_already_done_today < common.max_votes_per_day :
                 desired_nvote_fetches = common.max_votes_per_day - votes_already_done_today
                 cursor.execute(
                         'SELECT * FROM votes ' +
@@ -86,59 +90,68 @@ with open(common.users_csv_path, 'r') as user_file:
                 # Should fit, since we are limited to just a few votes every day.
                 vote_rows = cursor.fetchall()
                 actual_nvote_fetches = len(vote_rows)
+                questions_404 = set()
                 for vote_row in vote_rows:
-                    if not dry_run_no_server:
-                        # TODO this only logs the row ID, how to log every field?
-                        # http://stackoverflow.com/questions/7920284/how-can-printing-an-object-result-in-different-output-than-both-str-and-repr
-                        logging.debug('vote = ' + repr(vote_row))
-                        args = [
-                            casperjs_path,
-                            '--ssl-protocol=any',
-                            '--proxy=127.0.0.1:9050',
-                            '--proxy-type=socks5',
-                            common.vote_script_path,
-                            user_email,
-                            user_password,
-                            user_id,
-                            str(vote_row['question_id']),
-                            str(vote_row['answer_id']),
-                            cookie_path
-                        ]
-                        logging.debug('command = ' + ' '.join(args))
-                        process = subprocess.Popen(
-                            args,
-                            stdout = subprocess.PIPE,
-                            stderr = subprocess.PIPE,
-                        )
-                        stdout, stderr = process.communicate()
-                        logging.debug('stdout = \n' + stdout)
-                        if stderr:
-                            logging.error(stderr)
-                        exit_status = process.wait()
-                    else:
-                        exit_status = 0
-                    # TODO deal with different script exit statuses. E.g:
-                    # - if question deleted or no upvote arrow, schedule more votes for today
-                    # - if human verification, stop voting with this user, and send an email to admin
-                    cursor.execute("""UPDATE votes SET vote_time = ?, script_status = ?
-                        WHERE user_id = ? AND answer_id = ?""",
-                        (datetime.datetime.utcnow(), exit_status, user_id, vote_row['answer_id']))
-                    connection.commit()
-                    exit_status_msg = 'Exit status = ' + str(exit_status)
-                    if exit_status == exit_status_success:
-                        logging.debug(exit_status_msg)
-                        votes_already_done_today += 1
-                    else:
-                        # The question gave 404, so just skip all answers for that question.
-                        if exit_status == exit_status_404:
-                            vote_rows = [row for row in vote_rows if row['question_id'] != vote_row['question_id']]
-                            cursor.execute("""UPDATE votes SET vote_time = ?, script_status = ?
-                                WHERE user_id = ? AND question_id = ?""",
-                                (datetime.datetime.utcnow(), exit_status_404, user_id, vote_row['question_id']))
+                    if vote_row['question_id'] not in questions_404:
+                        if not dry_run_no_server:
+                            # TODO this only logs the row ID, how to log every field?
+                            # http://stackoverflow.com/questions/7920284/how-can-printing-an-object-result-in-different-output-than-both-str-and-repr
+                            logging.debug('vote = ' + str(tuple(vote_row)))
+                            args = [
+                                casperjs_path,
+                                '--ssl-protocol=any',
+                                '--proxy=127.0.0.1:9050',
+                                '--proxy-type=socks5',
+                                common.vote_script_path,
+                                user_email,
+                                user_password,
+                                user_id,
+                                str(vote_row['question_id']),
+                                str(vote_row['answer_id']),
+                                cookie_path
+                            ]
+                            logging.debug('command = ' + ' '.join(args))
+                            process = subprocess.Popen(
+                                args,
+                                stdout = subprocess.PIPE,
+                                stderr = subprocess.PIPE,
+                            )
+                            stdout, stderr = process.communicate()
+                            logging.debug('stdout = \n' + stdout.rstrip())
+                            if stderr:
+                                logging.error('stderr = \n' + stderr.rstrip())
+                            exit_status = process.wait()
+                        else:
+                            exit_status = 0
+                        # TODO deal with different script exit statuses. E.g:
+                        # - if question deleted or no upvote arrow, schedule more votes for today
+                        # - if human verification, stop voting with this user, and send an email to admin
+                        cursor.execute("""UPDATE votes SET vote_time = ?, script_status = ?
+                            WHERE user_id = ? AND answer_id = ?""",
+                            (datetime.datetime.utcnow(), exit_status, user_id, vote_row['answer_id']))
+                        connection.commit()
+                        exit_status_msg = 'Exit status = ' + str(exit_status) + '\n'
+                        if exit_status == exit_status_success:
+                            logging.debug(exit_status_msg)
+                            votes_already_done_today += 1
+                        else:
+                            # The question gave 404, so just skip all answers for that question.
+                            if exit_status == exit_status_404:
+                                questions_404.add(vote_row['question_id'])
+                                cursor.execute("""UPDATE votes SET vote_time = ?, script_status = ?
+                                    WHERE user_id = ? AND question_id = ?""",
+                                    (datetime.datetime.utcnow(), exit_status_404, user_id, vote_row['question_id']))
+                            failures_today += 1
+                            logging.error(exit_status_msg)
+                            if failures_today == max_failures_today:
+                                # TODO email admin.
+                                logging.error('Reached maximum number of failures for this day {}. Skipping current user.'.format(max_failures_today))
+                                break
+                    if actual_nvote_fetches < desired_nvote_fetches:
+                        # TODO email admin. Not enough votes on the schedule for this user.
                         logging.error(exit_status_msg)
-                if actual_nvote_fetches < desired_nvote_fetches:
-                    # TODO email admin. Not enough votes on the schedule for this user.
-                    break
+                        break
+                    # Separate votes with a newline.
         # Switch Tor exit IP.
         process = subprocess.Popen([
             'sudo',

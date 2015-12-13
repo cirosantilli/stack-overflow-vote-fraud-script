@@ -37,14 +37,28 @@
 
     See: [schedule](schedule.md) for tips on how to build your own.
 
-1.  Generate a `users.csv` with your bootstrapped sockpuppets. [More information](puppets.md).
+1.  Generate `users.csv` manually with your bootstrapped sockpuppets. Use:
+
+        cp users.csv.sample users.csv
+
+    as a starting point.
+
+    [More information about puppets here](puppets.md).
+
+    TODO: make a script that generates N random puppets, so you can start bootstrapping them straight away.
 
 1.  Do today's votes:
 
         ./run.py
 
-    To lay back and do that automatically every day when you turn on the computer, add:
+    To lay back and do that automatically every day when you turn on the computer, add to your `/etc/anacrontab`:
 
-        1 0 sofraud /home/ciro/bak/git/stack-overflow-vote-fraud-script/run.py /home/ciro/.nvm/v0.10.26/bin/casperjs >>/var/log/anacron-sofraud 2>&1
+        1 0 sofraud /home/$USER/bak/git/stack-overflow-vote-fraud-script/run.py /home/$USER/.nvm/v0.10.26/bin/casperjs >>/var/log/anacron-sofraud 2>&1
 
-    to your `/etc/anacrontab`.
+    `/var/log/anacron-sofraud` should be empty in normal operation, and only contain things like unexpected exception traces.
+
+    For the regular log, see:
+
+        tail -f run.log
+
+    in this directory.
