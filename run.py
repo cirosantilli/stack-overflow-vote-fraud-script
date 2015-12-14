@@ -103,7 +103,6 @@ with open(common.users_csv_path, 'r') as user_file:
                 questions_404 = set()
                 for vote_row in vote_rows:
                     if vote_row['question_id'] not in questions_404:
-
                         if not dry_run_no_server:
                             # TODO this only logs the row ID, how to log every field?
                             # http://stackoverflow.com/questions/7920284/how-can-printing-an-object-result-in-different-output-than-both-str-and-repr

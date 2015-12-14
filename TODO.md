@@ -1,5 +1,20 @@
 # TODO
 
+-   run multiple exit IPs, one per user, in parallel:
+
+    http://stackoverflow.com/questions/14321214/how-to-run-multiple-tor-processes-at-once-with-different-exit-ips
+
+    We currently use 15 minutes per user, which is manageable for small number of users, but not scalable.
+
+    It would also allow to quickly do all votes even if we turn the computer on for a short time each day.
+
+    Just adding multiple:
+
+        SocksPort 9050
+        SocksPort 9052
+
+    to `/etc/tor/torrc` seems to work.
+
 -   Send an email notification if voting fails.
 
     Sometimes, Stack Overflow asks you if you are not a robot out of the blue if it notices a weird voting pattern, and asks you to solve a CAPTCHA.
