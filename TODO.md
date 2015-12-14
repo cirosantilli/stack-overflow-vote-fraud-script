@@ -53,12 +53,6 @@
 
 -   run anacron as UTC time: <http://askubuntu.com/questions/54364/how-do-you-set-the-timezone-for-crontab>
 
--   deal with the Attention Required Captcha of Cloudfware for blacklisted IPs: by immediately getting a new exit node:
-
-    <https://support.cloudflare.com/hc/en-us/articles/203366080-Why-do-I-see-a-captcha-or-challenge-page-Attention-Required-trying-to-visit-a-site-protected-by-CloudFlare-as-a-site-visitor->
-
-    The page is like this: <https://github.com/cirosantilli/cloudfare-attention-required>
-
 -   detect locked posts on the dump or crawler, e.g.: http://stackoverflow.com/questions/871/why-is-git-better-than-subversion/873
 
     Skip all answers to those, as we already do with deleted questions.

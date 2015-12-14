@@ -44,8 +44,18 @@ exit_status_success = 0
 exit_status_404 = 65
 exit_status_no_upvote_arrow = 66
 exit_status_human_verification = 67
+exit_status_cloudfare_attention_required = 68
 
 max_failures_today = 30
+
+# Switch Tor exit IP.
+def new_tor_ip():
+    process = subprocess.Popen([
+        'sudo',
+        'killall',
+        '-HUP',
+        'tor'
+    ])
 
 if len(sys.argv) > 1:
     casperjs_path = sys.argv[1]
@@ -57,7 +67,7 @@ logging.basicConfig(
     level = logging.DEBUG,
     format = '%(asctime)s|%(levelname)s|%(message)s',
 )
-cookie_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'cookies')
+current_dir = os.path.dirname(os.path.realpath(__file__))
 connection = sqlite3.connect(common.schedule_database_path, timeout=0)
 connection.row_factory = sqlite3.Row
 cursor = connection.cursor()
@@ -78,7 +88,7 @@ with open(common.users_csv_path, 'r') as user_file:
                     'WHERE user_id = ? AND vote_time >= ? AND vote_time < ? AND script_status = ?',
                     (user_id, today_midnight, tomorrow_midnight, exit_status_success)))[0]
             logging.debug('votes_already_done_today = ' + str(votes_already_done_today))
-            while votes_already_done_today < common.max_votes_per_day :
+            while votes_already_done_today < common.max_votes_per_day:
                 desired_nvote_fetches = common.max_votes_per_day - votes_already_done_today
                 cursor.execute(
                         'SELECT * FROM votes ' +
@@ -93,6 +103,7 @@ with open(common.users_csv_path, 'r') as user_file:
                 questions_404 = set()
                 for vote_row in vote_rows:
                     if vote_row['question_id'] not in questions_404:
+
                         if not dry_run_no_server:
                             # TODO this only logs the row ID, how to log every field?
                             # http://stackoverflow.com/questions/7920284/how-can-printing-an-object-result-in-different-output-than-both-str-and-repr
@@ -108,7 +119,7 @@ with open(common.users_csv_path, 'r') as user_file:
                                 user_id,
                                 str(vote_row['question_id']),
                                 str(vote_row['answer_id']),
-                                cookie_path
+                                current_dir
                             ]
                             logging.debug('command = ' + ' '.join(args))
                             process = subprocess.Popen(
@@ -141,22 +152,18 @@ with open(common.users_csv_path, 'r') as user_file:
                                 cursor.execute("""UPDATE votes SET vote_time = ?, script_status = ?
                                     WHERE user_id = ? AND question_id = ?""",
                                     (datetime.datetime.utcnow(), exit_status_404, user_id, vote_row['question_id']))
+                            elif exit_status == exit_status_cloudfare_attention_required:
+                                # TODO: also redo the last vote, or and keep changing tor node until it leaves this state.
+                                new_tor_ip()
                             failures_today += 1
                             logging.error(exit_status_msg)
                             if failures_today == max_failures_today:
                                 # TODO email admin.
                                 logging.error('Reached maximum number of failures for this day {}. Skipping current user.'.format(max_failures_today))
                                 break
-                    if actual_nvote_fetches < desired_nvote_fetches:
-                        # TODO email admin. Not enough votes on the schedule for this user.
-                        logging.error(exit_status_msg)
-                        break
-                    # Separate votes with a newline.
-        # Switch Tor exit IP.
-        process = subprocess.Popen([
-            'sudo',
-            'killall',
-            '-HUP',
-            'tor'
-        ])
+                if actual_nvote_fetches < desired_nvote_fetches:
+                    # TODO email admin. Not enough votes on the schedule for this user.
+                    logging.warn('Not enough votes scheduled for this user for today.')
+                    break
+        new_tor_ip()
 connection.close()

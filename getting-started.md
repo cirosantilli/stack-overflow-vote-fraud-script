@@ -2,7 +2,6 @@
 
 1.  Ubuntu 15.10 dependencies:
 
-        mkdir -p cookies
         sudo apt-get intall phantomjs torsocks sqlite3
         curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.29.0/install.sh | bash
         VERSION='0.10.26'

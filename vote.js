@@ -30,6 +30,12 @@ var exit_status_404 = 65
 var exit_status_no_upvote_arrow = 66
 /* Human verification on /captcha. */
 var exit_status_human_verification = 67
+/*
+Blacklisted IPs
+https://support.cloudflare.com/hc/en-us/articles/203366080-Why-do-I-see-a-captcha-or-challenge-page-Attention-Required-trying-to-visit-a-site-protected-by-CloudFlare-as-a-site-visitor-
+The page is like this: <https://github.com/cirosantilli/cloudfare-attention-required>
+*/
+var exit_status_cloudfare_attention_required = 68
 
 var fs = require('fs');
 var casper = require('casper').create({
@@ -52,9 +58,11 @@ var answer_id = casper.cli.get(4)
 As an argument because there is no better way to get the full path to this script
 http://stackoverflow.com/questions/16769057/how-to-get-currently-executed-file-directory-in-casperjs
 */
-var cookie_dir = casper.cli.get(5) + '/'
+var current_dir = casper.cli.get(5)
+var cookie_dir = current_dir + '/cookies'
+var log_dir = current_dir + '/logs'
 
-var cookie_path = cookie_dir + user_id
+var cookie_path = cookie_dir + '/' + user_id
 var question_url = domain + 'questions/' + question_id
 
 var last_response
@@ -85,6 +93,9 @@ casper.thenOpen(question_url, function(response) {
   }
   /* undefined */
   if (last_response.status === undefined || last_response.status === 404) {
+    fs.write(log_dir + '/' + user_id + '-' + answer_id + '.html', this.getPageContent(), 'w');
+    if (this.getTitle() == 'Attention Required! | CloudFlare' )
+      this.exit(exit_status_cloudfare_attention_required)
     this.exit(exit_status_404);
   }
 
