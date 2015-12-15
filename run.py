@@ -32,6 +32,7 @@ import os.path
 import sqlite3
 import subprocess
 import sys
+import threading
 
 import common
 
@@ -56,24 +57,32 @@ def new_tor_ip():
         '-HUP',
         'tor'
     ])
-
+first_tor_port = 9052
 if len(sys.argv) > 1:
     casperjs_path = sys.argv[1]
 else:
     casperjs_path = '/home/ciro/.nvm/v0.10.26/bin/casperjs'
 
+# Is thread safe: http://stackoverflow.com/questions/2973900/is-pythons-logging-module-thread-safe
 logging.basicConfig(
     filename = os.path.splitext(os.path.realpath(__file__))[0] + '.log',
     level = logging.DEBUG,
     format = '%(asctime)s|%(levelname)s|%(message)s',
 )
 current_dir = os.path.dirname(os.path.realpath(__file__))
-connection = sqlite3.connect(common.schedule_database_path, timeout=0)
-connection.row_factory = sqlite3.Row
-cursor = connection.cursor()
-with open(common.users_csv_path, 'r') as user_file:
-    user_csver = csv.reader(user_file)
-    for user_row in user_csver:
+
+class UserVotesThread(threading.Thread):
+    # Do one connection per thread:
+    # http://stackoverflow.com/questions/1680249/how-to-use-sqlite-in-a-multi-threaded-application
+    # http://stackoverflow.com/questions/22739590/how-to-share-single-sqlite-connection-in-multi-threaded-python-application
+    connection = sqlite3.connect(common.schedule_database_path)
+    connection.row_factory = sqlite3.Row
+    cursor = connection.cursor()
+    def __init__(self, user_row, tor_port):
+        super(SummingThread, self).__init__()
+        self.user_row = user_row
+        self.tor_port = tor_port
+    def run(self):
         logging.debug('user = ' + str(user_row))
         user_id, user_email, user_password = user_row
         if user_id != common.user_id_off:
@@ -110,7 +119,7 @@ with open(common.users_csv_path, 'r') as user_file:
                             args = [
                                 casperjs_path,
                                 '--ssl-protocol=any',
-                                '--proxy=127.0.0.1:9050',
+                                '--proxy=127.0.0.1:' + self.tor_port,
                                 '--proxy-type=socks5',
                                 common.vote_script_path,
                                 user_email,
@@ -164,5 +173,14 @@ with open(common.users_csv_path, 'r') as user_file:
                     # TODO email admin. Not enough votes on the schedule for this user.
                     logging.warn('Not enough votes scheduled for this user for today.')
                     break
-        new_tor_ip()
-connection.close()
+        connection.close()
+
+with open(common.users_csv_path, 'r') as user_file:
+    user_csv = csv.reader(user_file)
+    threads = []
+    for i, user_row in user_csv:
+        t = UserVotesThread(user_row, first_tor_port + i)
+        threads.append(t)
+        t.start()
+    for t in threads:
+        t.join()
