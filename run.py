@@ -29,6 +29,8 @@ import csv
 import datetime
 import logging
 import os.path
+import pipes
+import random
 import sqlite3
 import subprocess
 import sys
@@ -43,10 +45,13 @@ dry_run_no_server = False
 exit_status_success = 0
 exit_status_404 = 65
 exit_status_no_upvote_arrow = 66
+# TODO deal with this case by emailing the admin to manually do the CAPTCHA.
 exit_status_human_verification = 67
 exit_status_cloudfare_attention_required = 68
 
 max_failures_today = 30
+
+vote_not_done_query = 'WHERE vote_time IS NULL AND user_id = ? '
 
 # Switch Tor exit IP.
 def new_tor_ip():
@@ -67,10 +72,15 @@ logging.basicConfig(
     level = logging.DEBUG,
     format = '%(asctime)s|%(levelname)s|%(message)s',
 )
-current_dir = os.path.dirname(os.path.realpath(__file__))
+logging.debug(
+    'Last git commit SHA = ' +
+    subprocess.check_output('git -C {} rev-parse HEAD'.format(pipes.quote(script_dir))))
+
+script_dir = os.path.dirname(os.path.realpath(__file__))
 connection = sqlite3.connect(common.schedule_database_path, timeout=0)
 connection.row_factory = sqlite3.Row
 cursor = connection.cursor()
+
 with open(common.users_csv_path, 'r') as user_file:
     user_csver = csv.reader(user_file)
     for user_row in user_csver:
@@ -88,82 +98,81 @@ with open(common.users_csv_path, 'r') as user_file:
                     'WHERE user_id = ? AND vote_time >= ? AND vote_time < ? AND script_status = ?',
                     (user_id, today_midnight, tomorrow_midnight, exit_status_success)))[0]
             logging.debug('votes_already_done_today = ' + str(votes_already_done_today))
+            # We could cache this in a variable, and update it as we do operations.
+            # The problem is mass update of 404 questions.
+            nvotes_not_done = next(cursor.execute(
+                    'SELECT COUNT(*) FROM votes ' +
+                    vote_not_done_query,
+                    (user_id,)))[0]
             while votes_already_done_today < common.max_votes_per_day:
-                desired_nvote_fetches = common.max_votes_per_day - votes_already_done_today
-                cursor.execute(
-                        'SELECT * FROM votes ' +
-                        'WHERE vote_time IS NULL AND user_id = ? ' +
-                        'ORDER BY id ASC LIMIT ?',
-                        (user_id, desired_nvote_fetches))
-                # Trying to iterate the cursor is problematic because we are going go update rows as well.
-                # So we just fetch all to memory and be done with it.
-                # Should fit, since we are limited to just a few votes every day.
-                vote_rows = cursor.fetchall()
-                actual_nvote_fetches = len(vote_rows)
-                questions_404 = set()
-                for vote_row in vote_rows:
-                    if vote_row['question_id'] not in questions_404:
-                        if not dry_run_no_server:
-                            # TODO this only logs the row ID, how to log every field?
-                            # http://stackoverflow.com/questions/7920284/how-can-printing-an-object-result-in-different-output-than-both-str-and-repr
-                            logging.debug('vote = ' + str(tuple(vote_row)))
-                            args = [
-                                casperjs_path,
-                                '--ssl-protocol=any',
-                                '--proxy=127.0.0.1:9050',
-                                '--proxy-type=socks5',
-                                common.vote_script_path,
-                                user_email,
-                                user_password,
-                                user_id,
-                                str(vote_row['question_id']),
-                                str(vote_row['answer_id']),
-                                current_dir
-                            ]
-                            logging.debug('command = ' + ' '.join(args))
-                            process = subprocess.Popen(
-                                args,
-                                stdout = subprocess.PIPE,
-                                stderr = subprocess.PIPE,
-                            )
-                            stdout, stderr = process.communicate()
-                            logging.debug('stdout = \n' + stdout.rstrip())
-                            if stderr:
-                                logging.error('stderr = \n' + stderr.rstrip())
-                            exit_status = process.wait()
-                        else:
-                            exit_status = 0
-                        # TODO deal with different script exit statuses. E.g:
-                        # - if human verification, stop voting with this user, and send an email to admin
-                        cursor.execute("""UPDATE votes SET vote_time = ?, script_status = ?
-                            WHERE user_id = ? AND answer_id = ?""",
-                            (datetime.datetime.utcnow(), exit_status, user_id, vote_row['answer_id']))
-                        connection.commit()
-                        exit_status_msg = 'Exit status = ' + str(exit_status) + '\n'
-                        if exit_status == exit_status_success:
-                            logging.debug(exit_status_msg)
-                            votes_already_done_today += 1
-                        else:
-                            # The question gave 404, so just skip all answers for that question.
-                            if exit_status == exit_status_404:
-                                questions_404.add(vote_row['question_id'])
-                                cursor.execute("""UPDATE votes SET vote_time = ?, script_status = ?
-                                    WHERE user_id = ? AND question_id = ?""",
-                                    (datetime.datetime.utcnow(), exit_status_404, user_id, vote_row['question_id']))
-                            elif exit_status == exit_status_cloudfare_attention_required:
-                                # TODO: also redo the last vote, or and keep changing tor node until it leaves this state.
-                                new_tor_ip()
-                            failures_today += 1
-                            logging.error(exit_status_msg)
-                            if failures_today >= max_failures_today:
-                                break
-                if failures_today >= max_failures_today:
-                    # TODO email admin.
-                    logging.error('Reached maximum number of failures for this day: {}. Skipping current user: {}'.format(max_failures_today, user_id))
-                    break
-                if actual_nvote_fetches < desired_nvote_fetches:
+                if nvotes_not_done == 0:
                     # TODO email admin. Not enough votes on the schedule for this user.
                     logging.warn('Not enough votes scheduled today for user: {}'.format(user_id))
                     break
+                # Get one random vote and do it. Not very fast,
+                # but I could not find a better way, and network is our bottleneck.
+                cursor.execute(
+                        'SELECT * FROM votes ' +
+                        vote_not_done_query +
+                        'ORDER BY id ASC OFFSET ? LIMIT 1',
+                        (user_id, random.randint(1, nvotes_not_done)))
+                vote_row = cursor.fetchone()
+                if not dry_run_no_server:
+                    # TODO this only logs the row ID, how to log every field?
+                    # http://stackoverflow.com/questions/7920284/how-can-printing-an-object-result-in-different-output-than-both-str-and-repr
+                    logging.debug('vote = ' + str(tuple(vote_row)))
+                    args = [
+                        casperjs_path,
+                        '--ssl-protocol=any',
+                        '--proxy=127.0.0.1:9050',
+                        '--proxy-type=socks5',
+                        common.vote_script_path,
+                        user_email,
+                        user_password,
+                        user_id,
+                        str(vote_row['question_id']),
+                        str(vote_row['answer_id']),
+                        script_dir
+                    ]
+                    logging.debug('command = ' + ' '.join(args))
+                    process = subprocess.Popen(
+                        args,
+                        stdout = subprocess.PIPE,
+                        stderr = subprocess.PIPE,
+                    )
+                    stdout, stderr = process.communicate()
+                    logging.debug('stdout = \n' + stdout.rstrip())
+                    if stderr:
+                        logging.error('stderr = \n' + stderr.rstrip())
+                    exit_status = process.wait()
+                else:
+                    exit_status = 0
+                cursor.execute("""UPDATE votes SET vote_time = ?, script_status = ?
+                    WHERE user_id = ? AND answer_id = ?""",
+                    (datetime.datetime.utcnow(), exit_status, user_id, vote_row['answer_id']))
+                nvotes_not_done -= cursor.rowcount
+                connection.commit()
+                exit_status_msg = 'Exit status = ' + str(exit_status) + '\n'
+                if exit_status == exit_status_success:
+                    logging.debug(exit_status_msg)
+                    votes_already_done_today += 1
+                else:
+                    # The question gave 404, so just skip all answers for that question.
+                    if exit_status == exit_status_404:
+                        cursor.execute("""UPDATE votes SET vote_time = ?, script_status = ?
+                            WHERE user_id = ? AND question_id = ?""",
+                            (datetime.datetime.utcnow(), exit_status_404, user_id, vote_row['question_id']))
+                        nvotes_not_done -= cursor.rowcount
+                    elif exit_status == exit_status_cloudfare_attention_required:
+                        # TODO: also redo the last vote, or and keep changing tor node until it leaves this state.
+                        new_tor_ip()
+                    failures_today += 1
+                    logging.error(exit_status_msg)
+                    if failures_today >= max_failures_today:
+                        break
+            if failures_today >= max_failures_today:
+                # TODO email admin.
+                logging.error('Reached maximum number of failures for this day: {}. Skipping current user: {}'.format(max_failures_today, user_id))
+                break
         new_tor_ip()
 connection.close()

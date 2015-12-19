@@ -16,6 +16,11 @@ import sqlite3
 
 import common
 
+# First user to schedule for 0 based.
+first_user_range = 1
+# Last user to schedule for, exclusive.
+after_last_user_range = 2
+
 total_votes_per_user = common.schedule_ndays() * common.max_votes_per_day
 input_connection, input_cursor, output_connection, output_cursor = common.io_connections_and_cursors()
 vote_id = common.next_output_id(output_cursor)
@@ -31,7 +36,7 @@ post_rows = input_cursor.execute("""
         LIMIT ?;
         """,
         (common.Posts_PostTypeId_Question, common.Posts_PostTypeId_Answer, total_votes_per_user))
-for user_row in itertools.islice(common.iterate_users(), 1, 2):
+for user_row in itertools.islice(common.iterate_users(), first_user_range, after_last_user_range):
     user_id = user_row[common.users_csv_user_id_col]
     if user_id != common.user_id_off:
         user_nvotes = 0
