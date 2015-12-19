@@ -134,7 +134,6 @@ with open(common.users_csv_path, 'r') as user_file:
                         else:
                             exit_status = 0
                         # TODO deal with different script exit statuses. E.g:
-                        # - if question deleted or no upvote arrow, schedule more votes for today
                         # - if human verification, stop voting with this user, and send an email to admin
                         cursor.execute("""UPDATE votes SET vote_time = ?, script_status = ?
                             WHERE user_id = ? AND answer_id = ?""",
@@ -156,13 +155,15 @@ with open(common.users_csv_path, 'r') as user_file:
                                 new_tor_ip()
                             failures_today += 1
                             logging.error(exit_status_msg)
-                            if failures_today == max_failures_today:
-                                # TODO email admin.
-                                logging.error('Reached maximum number of failures for this day {}. Skipping current user.'.format(max_failures_today))
+                            if failures_today >= max_failures_today:
                                 break
+                if failures_today >= max_failures_today:
+                    # TODO email admin.
+                    logging.error('Reached maximum number of failures for this day: {}. Skipping current user: {}'.format(max_failures_today, user_id))
+                    break
                 if actual_nvote_fetches < desired_nvote_fetches:
                     # TODO email admin. Not enough votes on the schedule for this user.
-                    logging.warn('Not enough votes scheduled for this user for today.')
+                    logging.warn('Not enough votes scheduled today for user: {}'.format(user_id))
                     break
         new_tor_ip()
 connection.close()

@@ -4,6 +4,9 @@ Login and upvote and answer.
 Try to keep this as small as possible
 as it is insane and relies on PhantomJS libs like fs.
 
+I've regretted using CasperJS: too hard to understand the API.
+Should have gone with straight PhantomJS or Zombie.
+
 Put as much as possible on a Node.js script.
 
 This is quick and dirty: SO is just rolling it's upvote API now,
@@ -28,7 +31,7 @@ var upvote_sleep = 3000
 var exit_status_404 = 65
 /* TODO: the answer was deleted or the post locked. Implement. */
 var exit_status_no_upvote_arrow = 66
-/* Human verification on /captcha. */
+/* Human verification on stackoverflow.com/captcha. This has never happeneded so far with this script. */
 var exit_status_human_verification = 67
 /*
 Blacklisted IPs
@@ -94,9 +97,17 @@ casper.thenOpen(question_url, function(response) {
   /* undefined */
   if (last_response.status === undefined || last_response.status === 404) {
     fs.write(log_dir + '/' + user_id + '-' + answer_id + '.html', this.getPageContent(), 'w');
-    if (this.getTitle() == 'Attention Required! | CloudFlare' )
+    if (this.getTitle() == 'Attention Required! | CloudFlare') {
       this.exit(exit_status_cloudfare_attention_required)
-    this.exit(exit_status_404);
+      /*
+      Usin an else here because I'm unable to understand how exit works.
+      the bypass does not prevent the next exit from overwriding the first one:
+      https://github.com/n1k0/casperjs/issues/193
+      */
+    } else {
+      this.exit(exit_status_404);
+    }
+    this.bypass(1)
   }
 
   /* TODO check if "Human Verification - Stack Overflow"*/
