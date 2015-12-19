@@ -29,7 +29,6 @@ import csv
 import datetime
 import logging
 import os.path
-import pipes
 import random
 import sqlite3
 import subprocess
@@ -72,11 +71,11 @@ logging.basicConfig(
     level = logging.DEBUG,
     format = '%(asctime)s|%(levelname)s|%(message)s',
 )
+script_dir = os.path.dirname(os.path.realpath(__file__))
 logging.debug(
     'Last git commit SHA = ' +
-    subprocess.check_output('git -C {} rev-parse HEAD'.format(pipes.quote(script_dir))))
+    subprocess.check_output(['git', '-C', script_dir, 'rev-parse', 'HEAD']))
 
-script_dir = os.path.dirname(os.path.realpath(__file__))
 connection = sqlite3.connect(common.schedule_database_path, timeout=0)
 connection.row_factory = sqlite3.Row
 cursor = connection.cursor()
@@ -114,7 +113,7 @@ with open(common.users_csv_path, 'r') as user_file:
                 cursor.execute(
                         'SELECT * FROM votes ' +
                         vote_not_done_query +
-                        'ORDER BY id ASC OFFSET ? LIMIT 1',
+                        'ORDER BY id ASC  LIMIT 1 OFFSET ?',
                         (user_id, random.randint(1, nvotes_not_done)))
                 vote_row = cursor.fetchone()
                 if not dry_run_no_server:
@@ -147,11 +146,14 @@ with open(common.users_csv_path, 'r') as user_file:
                     exit_status = process.wait()
                 else:
                     exit_status = 0
-                cursor.execute("""UPDATE votes SET vote_time = ?, script_status = ?
-                    WHERE user_id = ? AND answer_id = ?""",
-                    (datetime.datetime.utcnow(), exit_status, user_id, vote_row['answer_id']))
-                nvotes_not_done -= cursor.rowcount
-                connection.commit()
+                if exit_status == exit_status_cloudfare_attention_required:
+                    new_tor_ip()
+                else:
+                    cursor.execute("""UPDATE votes SET vote_time = ?, script_status = ?
+                        WHERE user_id = ? AND answer_id = ?""",
+                        (datetime.datetime.utcnow(), exit_status, user_id, vote_row['answer_id']))
+                    nvotes_not_done -= cursor.rowcount
+                    connection.commit()
                 exit_status_msg = 'Exit status = ' + str(exit_status) + '\n'
                 if exit_status == exit_status_success:
                     logging.debug(exit_status_msg)
@@ -163,9 +165,6 @@ with open(common.users_csv_path, 'r') as user_file:
                             WHERE user_id = ? AND question_id = ?""",
                             (datetime.datetime.utcnow(), exit_status_404, user_id, vote_row['question_id']))
                         nvotes_not_done -= cursor.rowcount
-                    elif exit_status == exit_status_cloudfare_attention_required:
-                        # TODO: also redo the last vote, or and keep changing tor node until it leaves this state.
-                        new_tor_ip()
                     failures_today += 1
                     logging.error(exit_status_msg)
                     if failures_today >= max_failures_today:
