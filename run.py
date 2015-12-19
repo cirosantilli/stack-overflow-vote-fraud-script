@@ -50,6 +50,12 @@ exit_status_cloudfare_attention_required = 68
 max_failures_today = 30
 
 # Switch Tor exit IP.
+# TODO: make this specific for one of the ports. Doing for all has the following downsides:
+# - we usually do this to escape CloudFare. But if we change all IPs, it is likely that another one will also break CloudFare, and we'd have to change again.
+# - TODO does this happen? Ongoing connections might get closed and lost.
+# To do it, I think we can to use multiple torrc files via a template as explained at:
+# http://stackoverflow.com/a/18895491/895245
+# We should start them one in each thread, and then use `process.send_signal(signal.SIGHUP)` to change the port.
 def new_tor_ip():
     process = subprocess.Popen([
         'sudo',
@@ -75,6 +81,8 @@ class UserVotesThread(threading.Thread):
     # Do one connection per thread:
     # http://stackoverflow.com/questions/1680249/how-to-use-sqlite-in-a-multi-threaded-application
     # http://stackoverflow.com/questions/22739590/how-to-share-single-sqlite-connection-in-multi-threaded-python-application
+    # If DB locking gets too intense, we could make on DB file per user.
+    # http://stackoverflow.com/questions/1365265/on-localhost-how-to-pick-a-free-port-number
     connection = sqlite3.connect(common.schedule_database_path)
     connection.row_factory = sqlite3.Row
     cursor = connection.cursor()
