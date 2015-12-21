@@ -110,6 +110,8 @@ with open(common.users_csv_path, 'r') as user_file:
                     break
                 # Get one random vote and do it. Not very fast,
                 # but I could not find a better way, and network is our bottleneck.
+                # An faster alternative would be to read 10k rows and pick 30 from them each time.
+                # Less random, but also good enough.
                 cursor.execute(
                         'SELECT * FROM votes ' +
                         vote_not_done_query +

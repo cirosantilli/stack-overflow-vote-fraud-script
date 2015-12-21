@@ -31,7 +31,32 @@ var upvote_sleep = 3000
 var exit_status_404 = 65
 /* TODO: the answer was deleted or the post locked. Implement. */
 var exit_status_no_upvote_arrow = 66
-/* Human verification on stackoverflow.com/captcha. This has never happeneded so far with this script. */
+/*
+Human verification on stackoverflow.com/captcha. This has never happeneded so far with this script.
+
+Sometimes, Stack Overflow asks you if you are not a robot out of the blue if it notices a weird voting pattern,
+and asks you to solve a CAPTCHA.
+
+Of course, there is a limit to how much SO can do this, or real users will be too much annoyed.
+
+They URL seems to be fixed at:
+
+- <http://stackoverflow.com/captcha>
+
+Related threads:
+
+- <http://meta.stackoverflow.com/questions/302980/why-stack-overflow-repeatedly-asks-me-if-im-a-robot>
+- <http://meta.serverfault.com/questions/854/why-does-serverfault-as-well-as-stackoverflow-etc-asks-for-captcha-so-often>
+- <http://meta.stackexchange.com/questions/143455/i-am-not-a-robot>
+- <http://meta.stackexchange.com/questions/153561/human-verification-page-not-loading-in-china>
+- <http://meta.stackexchange.com/questions/2167/increase-captcha-threshold-for-post-editing>
+- <http://meta.stackexchange.com/questions/1343/how-often-do-captchas-appear>
+- <http://meta.stackexchange.com/questions/244638/please-use-the-new-recaptcha-on-the-human-verification-dialog>
+- <http://meta.stackexchange.com/questions/113974/are-there-some-tips-to-skip-the-human-check>
+- <http://meta.stackoverflow.com/questions/281597/how-do-you-answer-the-human-verification>
+- <http://meta.stackoverflow.com/questions/294480/why-is-human-verification-required-to-do-a-search>
+- <http://meta.stackexchange.com/questions/253524/why-am-i-being-redirected-to-a-captcha-when-i-am-just-searching/253526#253526>
+ * */
 var exit_status_human_verification = 67
 /*
 Blacklisted IPs
