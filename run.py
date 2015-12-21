@@ -71,6 +71,7 @@ logging.basicConfig(
     level = logging.DEBUG,
     format = '%(asctime)s|%(levelname)s|%(message)s',
 )
+logging.Formatter.converter = time.gmtime
 script_dir = os.path.dirname(os.path.realpath(__file__))
 logging.debug(
     'Last git commit SHA = ' +
