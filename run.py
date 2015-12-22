@@ -27,14 +27,18 @@ Only answer uptvoting is currently supported.
 
 import csv
 import datetime
+import email.mime.text
 import logging
 import os.path
 import random
+import smtplib
 import sqlite3
 import subprocess
 import sys
+import time
 
 import common
+import email_credentials
 
 # Don't do any operations to the Stack Overflow server.
 # But do change local database. Used for testing.
@@ -51,6 +55,24 @@ exit_status_cloudfare_attention_required = 68
 max_failures_today = 30
 
 vote_not_done_query = 'WHERE vote_time IS NULL AND user_id = ? '
+
+def send_email(subject, body=''):
+    user = email_credentials.user
+    recipient = email_credentials.recipient
+    to = recipient if type(recipient) is list else [recipient]
+    tos = ', '.join(to)
+    server = smtplib.SMTP(email_credentials.server, 587)
+    server.set_debuglevel(1)
+    server.ehlo()
+    server.starttls()
+    server.login(user, email_credentials.password)
+    msg = email.mime.text.MIMEText(body)
+    msg['Subject'] = subject
+    msg['From'] = user
+    msg['To'] = tos
+    message = msg.as_string()
+    server.sendmail(user, to, message)
+    server.quit()
 
 # Switch Tor exit IP.
 def new_tor_ip():
@@ -71,6 +93,8 @@ logging.basicConfig(
     level = logging.DEBUG,
     format = '%(asctime)s|%(levelname)s|%(message)s',
 )
+# Log in UTC time:
+# http://stackoverflow.com/questions/6321160/python-logging-how-to-set-time-to-gmt
 logging.Formatter.converter = time.gmtime
 script_dir = os.path.dirname(os.path.realpath(__file__))
 logging.debug(
@@ -173,6 +197,7 @@ with open(common.users_csv_path, 'r') as user_file:
                     if failures_today >= max_failures_today:
                         break
             if failures_today >= max_failures_today:
+                send_email('sofraud - reached maximum failures for this day')
                 # TODO email admin.
                 logging.error('Reached maximum number of failures for this day: {}. Skipping current user: {}'.format(max_failures_today, user_id))
                 break
