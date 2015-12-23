@@ -15,43 +15,12 @@
 
     to `/etc/tor/torrc` seems to work.
 
--   Send an email notification if voting fails.
+-   Send an email notifications for critical failures:
 
-    Sometimes, Stack Overflow asks you if you are not a robot out of the blue if it notices a weird voting pattern, and asks you to solve a CAPTCHA.
-
-    This will break our script.
-
-    A way to mitigate this is to generate an email notification so that we can intervene manually.
-
-    Of course, there is a limit to how much SO can do this, or real users will be too much annoyed.
-
-    They URL seems to be fixed at:
-
-    - <http://stackoverflow.com/captcha>
-
-    Related threads:
-
-    - <http://meta.stackoverflow.com/questions/302980/why-stack-overflow-repeatedly-asks-me-if-im-a-robot>
-    - <http://meta.serverfault.com/questions/854/why-does-serverfault-as-well-as-stackoverflow-etc-asks-for-captcha-so-often>
-    - <http://meta.stackexchange.com/questions/143455/i-am-not-a-robot>
-    - <http://meta.stackexchange.com/questions/153561/human-verification-page-not-loading-in-china>
-    - <http://meta.stackexchange.com/questions/2167/increase-captcha-threshold-for-post-editing>
-    - <http://meta.stackexchange.com/questions/1343/how-often-do-captchas-appear>
-    - <http://meta.stackexchange.com/questions/244638/please-use-the-new-recaptcha-on-the-human-verification-dialog>
-    - <http://meta.stackexchange.com/questions/113974/are-there-some-tips-to-skip-the-human-check>
-    - <http://meta.stackoverflow.com/questions/281597/how-do-you-answer-the-human-verification>
-    - <http://meta.stackoverflow.com/questions/294480/why-is-human-verification-required-to-do-a-search>
-    - <http://meta.stackexchange.com/questions/253524/why-am-i-being-redirected-to-a-captcha-when-i-am-just-searching/253526#253526>
+    - SO are you a robot
+    - more than N vote failures in a single day
 
 -   Create an question downvoter just to troll people :-)
-
--   Reuse a schedule across many users.
-
-    Schedulers then just say how many users will use a given schedule.
-
-    `run.py` then just randomizes the schedule to avoid correlation between puppets. 
-
-    It is hard to select N random rows from SQL, so we could just read 1000 rows at some random position to memory, and pick 30 randomly.
 
 -   avoid passing the full casperjs path to the root user.
 
@@ -72,6 +41,12 @@
 
     Skip all answers to those, as we already do with deleted questions.
 
-    TODO how? The only way seems to look at the question history. ugly.
+    TODO how? The only way on the dump (better) seems to look at the question history. ugly.
 
--   Unit tests. This would require mocking SO.
+-   Unit tests. This would require mocking SO...
+
+-   Reuse a schedule across many users.
+
+    Schedulers then just say how many users will use a given schedule.
+
+    Not too important, would just save some memory, and would be harder to say who voted what, as votes would have to be in random order.

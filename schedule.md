@@ -2,7 +2,11 @@
 
 Useful information for you to build your own scheduler.
 
+The schedule is an sqlite3 database with a fixed format that determines which votes our bots will do.
+
 The database format is documented at: <http://meta.stackexchange.com/questions/2677/database-schema-documentation-for-the-public-data-dump-and-sede>
+
+The order of the schedule is not important: the schedule runner picks random votes from it to make it harder for Stack Overflow to spot our puppets.
 
 How the fraud detecting algorithm works is not publicly documented:
 

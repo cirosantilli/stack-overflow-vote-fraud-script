@@ -46,6 +46,10 @@
 
     TODO: make a script that generates N random puppets, so you can start bootstrapping them straight away.
 
+1.  Generate `email_credentials` to setup an email sender for the admin in case of error. Start from the template:
+
+        cp email_credentials.py.sample email_credentials.py
+
 1.  Do today's votes:
 
         ./run.py
