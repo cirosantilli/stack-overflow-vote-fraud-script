@@ -15,10 +15,9 @@
 
     to `/etc/tor/torrc` seems to work.
 
--   Send an email notifications for critical failures:
+-   Do randomly less votes than exactly 30 per day to make it harder to spot puppets.
 
-    - SO are you a robot
-    - more than N vote failures in a single day
+-   Create a script that generates good random email password pairs with random lengths between 8 - 12 to help people bootstrap.
 
 -   Create an question downvoter just to troll people :-)
 

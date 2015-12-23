@@ -70,7 +70,7 @@ def send_email(subject, body=''):
     server.starttls()
     server.login(user, email_credentials.password)
     msg = email.mime.text.MIMEText(body)
-    msg['Subject'] = subject
+    msg['Subject'] = 'sofraud - ' + subject
     msg['From'] = user
     msg['To'] = tos
     message = msg.as_string()
@@ -83,14 +83,11 @@ class UserVotesThread(threading.Thread):
         self.user_row = user_row
         self.tor_port = first_tor_port + 2 * csv_user_id
         self.tor_control_port = first_tor_port + 2 * csv_user_id + 1
-    # Switch Tor exit IP.
-    # TODO: make this specific for one of the ports. Doing for all has the following downsides:
-    # - we usually do this to escape CloudFare. But if we change all IPs, it is likely that another one will also break CloudFare, and we'd have to change again.
-    # - TODO does this happen? Ongoing connections might get closed and lost.
-    # To do it, I think we can to use multiple torrc files via a template as explained at:
-    # http://stackoverflow.com/a/18895491/895245
-    # We should start them one in each thread, and then use `process.send_signal(signal.SIGHUP)` to change the port.
     def new_tor_ip(self):
+        """
+        Switch Tor exit IP for this Tor process.
+        http://stackoverflow.com/a/18895491/895245
+        """
         self.process.send_signal(signal.SIGHUP)
     def start_tor(self):
         torrc_file_path = os.path.join(torrc_dir, str(self.tor_port))
@@ -133,8 +130,9 @@ class UserVotesThread(threading.Thread):
                 (user_id,)))[0]
         while votes_already_done_today < common.max_votes_per_day:
             if nvotes_not_done == 0:
-                # TODO email admin. Not enough votes on the schedule for this user.
-                logging.warn('Not enough votes scheduled today for user: {}'.format(user_id))
+                msg = 'Not enough votes scheduled today for user = {}'.format(user_id)
+                logging.warn(msg)
+                send_email(msg)
                 break
             # Get one random vote and do it. Not very fast,
             # but I could not find a better way, and network is our bottleneck.
@@ -183,7 +181,7 @@ class UserVotesThread(threading.Thread):
                     (datetime.datetime.utcnow(), exit_status, user_id, vote_row['answer_id']))
                 nvotes_not_done -= cursor.rowcount
                 connection.commit()
-            exit_status_msg = 'Exit status = ' + str(exit_status) + '\n'
+            exit_status_msg = 'Exit status = ' + str(exit_status)
             if exit_status == exit_status_success:
                 logging.debug(exit_status_msg)
                 votes_already_done_today += 1
@@ -197,8 +195,9 @@ class UserVotesThread(threading.Thread):
                 failures_today += 1
                 logging.error(exit_status_msg)
                 if failures_today >= max_failures_today:
-                    send_email('sofraud - reached maximum failures for user {}'.format(user_id))
-                    logging.error('Reached maximum number of failures for today: {}. Skipping current user: {}'.format(max_failures_today, user_id))
+                    msg = 'Reached maximum failures today for user = {}. Skipping further votes.'.format(user_id)
+                    logging.error(msg)
+                    send_email(msg)
                     break
         connection.close()
 
@@ -225,7 +224,6 @@ with open(common.users_csv_path, 'r') as user_file:
     user_csv = csv.reader(user_file)
     threads = []
     for i, user_row in enumerate(common.iterate_users()):
-        # TODO ignore lines that start with # instead.
         t = UserVotesThread(user_row, i)
         threads.append(t)
         t.start()

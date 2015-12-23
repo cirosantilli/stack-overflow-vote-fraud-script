@@ -14,11 +14,23 @@ The format is documented there.
 
 ## Use Tor
 
-Use Tor browser all the time while on Stack Overflow!
+Our script uses Tor automatically, so you don't have to worry about it when running.
 
-Or else Stack Overflow might block your IP!
+But in order to:
 
-Never access the profile of puppet with another puppet or with you main account!
+- bootstrap puppets
+- debug the script, specially to see if puppets votes were actually done under https://stackoverflow.com/users/UID/userUID?tab=votes
+
+use the Tor browser all the time, or else Stack Overflow might block your IP some day!
+
+Never access the profile of puppet with another puppet or with you main account.
+
+Remember that the Tor browser uses a different exit IP than the ones from our runner script. So for example you might get a CloudFare block there (which you should unblock with the CAPTCHA), but not on the script at a given time.
+
+Also consider setting:
+
+- Tor browser to remember browsing history and passwords to speed things up
+- multiple Tor browsers with different IPs one for each user: <http://tor.stackexchange.com/questions/2006/how-to-run-multiple-tor-browsers-with-different-ips>
 
 ## Helper to generate random logins
 
@@ -53,9 +65,11 @@ Edits to make:
 
 -   supertag e.g. `python` to `django`
 
-    Query http://data.stackexchange.com/stackoverflow/query/edit/392827 Monday 13h GMT, looked at 16 posts, edited 15, added python supertag only + obvious fixes, took 5 minutes, got bootstraped after 15 minutes, stabilized at 27 rep.
+    Query: <http://data.stackexchange.com/stackoverflow/query/edit/392827> Monday 13h GMT, looked at 16 posts, edited 15, added python supertag only + obvious fixes, took 5 minutes, got bootstraped after 15 minutes, stabilized at 27 rep.
 
--   profanity: http://data.stackexchange.com/stackoverflow/query/edit/392580
+    This is my preferred approach so far.
+
+-   profanity: <http://data.stackexchange.com/stackoverflow/query/edit/392580>
 
 -   remove hello and thanks
 
@@ -119,6 +133,10 @@ You might also want to download the SVG from the data query and then transform i
 
 ### More automatic methods
 
-This would be the holy grail of bootstrapping.
+This would be the holy grail of vote fraud.
 
-One possibility would be to mass scrap questions from other Q&A websites.
+If we could have infinitely many puppets, then any resistance from SO would be impossible.
+
+One possibility would be to mass scrap questions from other Q&A websites. TODO: link back to where I saw this proposed on Meta.
+
+This script currently exists to make it possible to profit from the intermediate state where one can generate a limited number of puppets (tens).
