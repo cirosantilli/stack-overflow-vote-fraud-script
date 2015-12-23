@@ -1,6 +1,5 @@
-# DELETE THOSE COMMENTS before using!
 # Format:
 # stackoverflow UID,SO email address,password
-1,name1@mail.com,password1
-2,name1@mail.com,password2
--1,ignore_me@mail.com,password-1
+1234,name1@mail.com,password1
+5678,name2@mail.com,password2
+#,ignore_me@mail.com,password3

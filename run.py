@@ -225,11 +225,10 @@ else:
 with open(common.users_csv_path, 'r') as user_file:
     user_csv = csv.reader(user_file)
     threads = []
-    for i, user_row in enumerate(user_csv):
+    for i, user_row in enumerate(common.iterate_users()):
         # TODO ignore lines that start with # instead.
-        if user_row[0] != common.user_id_off:
-            t = UserVotesThread(user_row, i)
-            threads.append(t)
-            t.start()
+        t = UserVotesThread(user_row, i)
+        threads.append(t)
+        t.start()
     for t in threads:
         t.join()

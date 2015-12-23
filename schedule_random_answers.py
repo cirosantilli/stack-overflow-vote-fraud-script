@@ -27,22 +27,21 @@ nanswers = next(input_cursor.execute(
 # Second puppet only.
 for user_row in itertools.islice(common.iterate_users(), 1, 1 + nusers):
     user_id = user_row[common.users_csv_user_id_col]
-    if user_id != common.user_id_off:
-        nscheduled_answers = 0
-        answer_indexes = set()
-        while nscheduled_answers < total_votes_per_user:
-            n = random.randint(0, nanswers - 1)
-            if n not in answer_indexes:
-                answer_indexes.add(n)
-                nscheduled_answers += 1
-        user_nvotes = 0
-        for answer_i in answer_indexes:
-            post_row = next(input_cursor.execute(
-                    'SELECT * FROM posts WHERE PostTypeId = ? LIMIT 1 OFFSET ?',
-                    (common.Posts_PostTypeId_Answer, answer_i)))
-            output_cursor.execute('INSERT INTO votes VALUES (?, ?, ?, ?, NULL, NULL)',
-                    (vote_id, user_id, post_row['Id'], post_row['ParentId']))
-            output_connection.commit()
-            vote_id += 1
-            user_nvotes += 1
+    nscheduled_answers = 0
+    answer_indexes = set()
+    while nscheduled_answers < total_votes_per_user:
+        n = random.randint(0, nanswers - 1)
+        if n not in answer_indexes:
+            answer_indexes.add(n)
+            nscheduled_answers += 1
+    user_nvotes = 0
+    for answer_i in answer_indexes:
+        post_row = next(input_cursor.execute(
+                'SELECT * FROM posts WHERE PostTypeId = ? LIMIT 1 OFFSET ?',
+                (common.Posts_PostTypeId_Answer, answer_i)))
+        output_cursor.execute('INSERT INTO votes VALUES (?, ?, ?, ?, NULL, NULL)',
+                (vote_id, user_id, post_row['Id'], post_row['ParentId']))
+        output_connection.commit()
+        vote_id += 1
+        user_nvotes += 1
 common.commit_and_closeclose_io_connections(input_connection, output_connection)

@@ -1,5 +1,6 @@
 import csv
 import datetime
+import itertools
 import sqlite3
 import os.path
 
@@ -31,10 +32,10 @@ users_csv_path = os.path.join(script_directory, 'users.csv')
 users_csv_user_id_col = 0
 users_csv_user_email_col = 1
 users_csv_user_password_col = 2
-user_id_off = -1
 def iterate_users():
     with open(users_csv_path, 'r') as f:
-        for row in csv.reader(f):
+        for row in csv.reader(itertools.ifilter(
+                lambda row: row[0] != '#', f)):
             yield row
 
 def io_connections_and_cursors():
