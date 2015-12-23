@@ -44,7 +44,7 @@ import email_credentials
 
 # Don't do any operations to the Stack Overflow server.
 # But do change local database. Used for testing.
-dry_run_no_server = True
+dry_run_no_server = False
 
 # Some exit statuses indicate that we should not send a notification email.
 exit_status_success = 0
@@ -82,7 +82,7 @@ class UserVotesThread(threading.Thread):
         super(UserVotesThread, self).__init__(name=str(user_row[0]))
         self.user_row = user_row
         self.tor_port = first_tor_port + 2 * csv_user_id
-        self.tor_control_port = + 2 * csv_user_id + 1
+        self.tor_control_port = first_tor_port + 2 * csv_user_id + 1
     # Switch Tor exit IP.
     # TODO: make this specific for one of the ports. Doing for all has the following downsides:
     # - we usually do this to escape CloudFare. But if we change all IPs, it is likely that another one will also break CloudFare, and we'd have to change again.
@@ -94,18 +94,17 @@ class UserVotesThread(threading.Thread):
         self.process.send_signal(signal.SIGHUP)
     def start_tor(self):
         torrc_file_path = os.path.join(torrc_dir, str(self.tor_port))
-        if not os.path.isfile(torrc_file_path):
-            with open(torrc_file_path, 'w') as torrc_file:
-                torrc_file.write('SocksPort {}\nControlPort {}\nDataDirectory {}\n'.format(
-                        self.tor_port, self.tor_control_port, str(self.tor_port) + '.d'))
+        with open(torrc_file_path, 'w') as torrc_file:
+            torrc_file.write('SocksPort {}\nControlPort {}\nDataDirectory {}\n'.format(
+                    self.tor_port, self.tor_control_port, os.path.join(torrc_dir, str(self.tor_port) + '.d')))
         self.process = subprocess.Popen(
             ['tor', '-f', torrc_file_path],
             stdout = subprocess.PIPE,
             stderr = subprocess.PIPE,
         )
     def run(self):
-        logging.debug('user = ' + str(user_row))
-        user_id, user_email, user_password = user_row
+        logging.debug('user = ' + str(self.user_row))
+        user_id, user_email, user_password = self.user_row
         # TODO if we start running at midnight, we would overestimate the amount of votes used.
         # We could calculate this every time after a vote to increase precision.
         now = datetime.datetime.utcnow()
@@ -125,7 +124,7 @@ class UserVotesThread(threading.Thread):
                 'SELECT COUNT(*) FROM votes ' +
                 'WHERE user_id = ? AND vote_time >= ? AND vote_time < ? AND script_status = ?',
                 (user_id, today_midnight, tomorrow_midnight, exit_status_success)))[0]
-        logging.debug('votes_already_done_today = ' + str(votes_already_done_today))
+        logging.debug('Votes already done today = ' + str(votes_already_done_today))
         # We could cache this in a variable, and update it as we do operations.
         # The problem is mass update of 404 questions.
         nvotes_not_done = next(cursor.execute(
