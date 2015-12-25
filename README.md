@@ -1,4 +1,4 @@
-# Stack Overflow Voting Fraud Script
+# Stack Overflow Vote Fraud Script
 
 1.  [Getting started](getting-started.md)
 1.  [Features](features.md)
