@@ -23,7 +23,7 @@ But in order to:
 
 use the Tor browser all the time, or else Stack Overflow might block your IP some day!
 
-Never access the profile of puppet with another puppet or with you main account.
+Never access the profile of puppet with another puppet or with you main account. Use <http://tor.stackexchange.com/a/9256/7651> to do it.
 
 Remember that the Tor browser uses a different exit IP than the ones from our runner script. So for example you might get a CloudFare block there (which you should unblock with the CAPTCHA), but not on the script at a given time.
 

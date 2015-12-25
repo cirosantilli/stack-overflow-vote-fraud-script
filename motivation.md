@@ -4,7 +4,7 @@ The current reputation system is too simplistic.
 
 The anti-fraud feels too manual and ignores [Kerckhoffs's principle](https://en.wikipedia.org/wiki/Kerckhoffs's_principle).
 
-Throttling measures like 30 votes / 200 rep per day and API limitations are just a cheap workaround for a robust algorithm.
+Throttling measures like 30 votes / 200 rep per day / 15 rep min to vote and API limitations are just a cheap workaround for a robust algorithm.
 
 This script aims to level the playing field, so that data scientists can focus on statistical attacks to audit the system, and forget about the silly complexities required to apply the attack.
 
