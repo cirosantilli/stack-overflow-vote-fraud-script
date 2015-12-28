@@ -68,7 +68,6 @@ var exit_status_cloudfare_attention_required = 68
 var fs = require('fs');
 var casper = require('casper').create({
   logLevel: 'debug',
-  loadImages: false,
   pageSettings: {
     /* From http://www.useragentstring.com/pages/Firefox/ */
     userAgent: 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.1'
