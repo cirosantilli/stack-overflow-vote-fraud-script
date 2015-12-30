@@ -99,7 +99,13 @@ casper.start()
 if (fs.isFile(cookie_path))
   phantom.cookies = JSON.parse(fs.read(cookie_path));
 
+/* To help debugging CloudFare. */
+casper.thenOpen('http://checkip.amazonaws.com/', function() {
+  this.echo('IP = ' + this.getHTML());
+});
+
 casper.thenOpen(question_url, function(response) {
+
   last_response = response
   /* Ensure that we are logged in. */
   if (this.exists('.topbar .login-link')) {
@@ -132,26 +138,25 @@ casper.thenOpen(question_url, function(response) {
       this.exit(exit_status_404);
     }
     this.bypass(1)
-  }
+  } else {
+    /* TODO check if "Human Verification - Stack Overflow"*/
+    /*
+    TODO: right now we don't differentiate answers deleted
+    since dump from the robot check page (which should generate an email).
+    There were about 500k deleted answers since dump, out of 17M total,
+    so it does not matter statistically.
+    */
 
-  /* TODO check if "Human Verification - Stack Overflow"*/
-
-  /*
-  TODO: right now we don't differentiate answers deleted
-  since dump from the robot check page (which should generate an email).
-  There were about 500k deleted answers since dump, out of 17M total,
-  so it does not matter statistically.
-  */
-
-  /* Wait some random interval to "read" the answer. */
-  this.wait(5000 + Math.floor(Math.random() * 10000), function() {
-    /* Click upvote button and wait a bit for JavaScript to end executing.. */
-    this.thenClick('#answer-' + answer_id + ' .vote-up-off', function() {
-      this.wait(upvote_sleep, function() {
-        fs.write(cookie_path, JSON.stringify(phantom.cookies), 644);
+    /* Wait some random interval to "read" the answer. */
+    this.wait(5000 + Math.floor(Math.random() * 10000), function() {
+      /* Click upvote button and wait a bit for JavaScript to end executing.. */
+      this.thenClick('#answer-' + answer_id + ' .vote-up-off', function() {
+        this.wait(upvote_sleep, function() {
+          fs.write(cookie_path, JSON.stringify(phantom.cookies), 644);
+        });
       });
     });
-  });
+  }
 });
 
 /*

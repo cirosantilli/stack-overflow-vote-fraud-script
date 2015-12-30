@@ -101,6 +101,7 @@ Edits to make:
         OR p.Body LIKE '%i have a question%'
         OR p.Body LIKE '%here is my problem%'
         OR p.Body LIKE '%please help%'
+        OR p.Body LIKE '%any help?%'
         OR p.Body LIKE '%any ideas?%'
         OR p.Body LIKE '%I wanted to know%'
         OR p.Body LIKE '%I want to know%'
@@ -109,6 +110,7 @@ Edits to make:
         /* This one shold be searched for in titles. */
         OR p.Body LIKE '%I_m wondering if%'
         OR p.Body LIKE '%I wonder if%'
+        OR p.Body LIKE '%I have no idea how to do that%'
 
 -   Meaningless title keywords: <http://data.stackexchange.com/stackoverflow/query/edit/404116>
 
