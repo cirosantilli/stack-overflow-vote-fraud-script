@@ -96,13 +96,19 @@ var last_response
 
 casper.start()
 
-if (fs.isFile(cookie_path))
+if (fs.isFile(cookie_path)) {
   phantom.cookies = JSON.parse(fs.read(cookie_path));
+}
 
-/* To help debugging CloudFare. */
+/*
+To help debugging CloudFare.
+TODO: if I turn this on, it does not recognize CloudFare!
+*/
+/*
 casper.thenOpen('http://checkip.amazonaws.com/', function() {
   this.echo('IP = ' + this.getHTML());
 });
+*/
 
 casper.thenOpen(question_url, function(response) {
 
@@ -127,10 +133,12 @@ casper.thenOpen(question_url, function(response) {
   /* undefined */
   if (last_response.status === undefined || last_response.status === 404) {
     fs.write(log_dir + '/' + user_id + '-' + answer_id + '.html', this.getPageContent(), 'w');
+    /* TODO To debug checkip on. */
+    this.echo('getTitle = ' + this.getTitle())
     if (this.getTitle() == 'Attention Required! | CloudFlare') {
       this.exit(exit_status_cloudfare_attention_required)
       /*
-      Usin an else here because I'm unable to understand how exit works.
+      Using an else here because I'm unable to understand how exit works.
       the bypass does not prevent the next exit from overwriding the first one:
       https://github.com/n1k0/casperjs/issues/193
       */
@@ -148,13 +156,11 @@ casper.thenOpen(question_url, function(response) {
     */
 
     /* Wait some random interval to "read" the answer. */
-    this.wait(5000 + Math.floor(Math.random() * 10000), function() {
-      /* Click upvote button and wait a bit for JavaScript to end executing.. */
-      this.thenClick('#answer-' + answer_id + ' .vote-up-off', function() {
-        this.wait(upvote_sleep, function() {
-          fs.write(cookie_path, JSON.stringify(phantom.cookies), 644);
-        });
-      });
+    this.wait(5000 + Math.floor(Math.random() * 10000));
+    this.thenClick('#answer-' + answer_id + ' .vote-up-off')
+    this.wait(upvote_sleep);
+    this.then(function() {
+        fs.write(cookie_path, JSON.stringify(phantom.cookies), 644);
     });
   }
 });

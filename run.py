@@ -150,7 +150,7 @@ class UserVotesThread(threading.Thread):
                 args = [
                     casperjs_path,
                     '--ssl-protocol=any',
-                    '--proxy=127.0.0.1:9050',
+                    '--proxy=127.0.0.1:' + str(self.tor_port),
                     '--proxy-type=socks5',
                     common.vote_script_path,
                     user_email,

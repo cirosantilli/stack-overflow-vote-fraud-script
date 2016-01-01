@@ -59,6 +59,8 @@ Note that most large providers are asking for a cell phone today, so look for mo
 
 This is likely the best manual approach.
 
+I'm not the first to come up with this: <http://meta.stackoverflow.com/questions/268267/suspicious-users-found-active-only-one-day-many-upvotes-cast>
+
 With some training, you can create one puppet every 10 minutes.
 
 Edits to make:
