@@ -115,18 +115,19 @@ casper.thenOpen(question_url, function(response) {
   last_response = response
   /* Ensure that we are logged in. */
   if (this.exists('.topbar .login-link')) {
-    this.thenOpen(domain + 'users/login', function() {
-      this.fill('form#login-form', {
-        email: email,
-        password: password
-      }, true);
-    });
+    this.open(domain + 'users/login')
+    this.wait(5000 + Math.floor(Math.random() * 10000));
+    this.fill('form#login-form', {
+      email: email,
+      password: password
+    }, true);
     /*
     TODO use redirect parameters instead like a normal user would:
     users/login?ssrc=head&returnurl=http%3a%2f%2fstackoverflow.com%2fquestions%2f33767237%2fa-hello-world-c-program-compiled-by-mingw-w64-spawns-one-more-short-lived-thre
     Doesn't matter much since we will use mostly cookie login.
     */
-    this.thenOpen(question_url, function(response) {
+    this.wait(5000 + Math.floor(Math.random() * 10000));
+    this.open(question_url, function(response) {
       last_response = response
     });
   }
@@ -157,11 +158,9 @@ casper.thenOpen(question_url, function(response) {
 
     /* Wait some random interval to "read" the answer. */
     this.wait(5000 + Math.floor(Math.random() * 10000));
-    this.thenClick('#answer-' + answer_id + ' .vote-up-off')
+    this.click('#answer-' + answer_id + ' .vote-up-off')
     this.wait(upvote_sleep);
-    this.then(function() {
-        fs.write(cookie_path, JSON.stringify(phantom.cookies), 644);
-    });
+    fs.write(cookie_path, JSON.stringify(phantom.cookies), 644);
   }
 });
 
