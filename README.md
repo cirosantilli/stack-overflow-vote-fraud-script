@@ -1,5 +1,7 @@
 # Stack Overflow Vote Fraud Script
 
+Current status: [vote.js](vote.js) is broken. Was not broken a few commits ago, but I tried to improve it. We should likely just port to pure `phantom.js`, `casper.js` is too hard to understand for me.
+
 1.  [Getting started](getting-started.md)
 1.  [Features](features.md)
 1.  [Motivation](motivation.md)
