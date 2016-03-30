@@ -57,9 +57,11 @@ Note that most large providers are asking for a cell phone today, so look for mo
 
 ### Trivial edits
 
-This is likely the best manual approach.
+This is likely the best manual approach on Stack Overflow.
 
 I'm not the first to come up with this: <http://meta.stackoverflow.com/questions/268267/suspicious-users-found-active-only-one-day-many-upvotes-cast>
+
+It does not work on all websites. E.g. <http://gamedev.stackexchange.com/> in 2016 rejects supertag / indentation / thanks removal.
 
 With some training, you can create one puppet every 10 minutes.
 

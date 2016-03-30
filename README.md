@@ -7,6 +7,7 @@
 1.  [Schedulers](schedule.md)
     1.  [schedule_all_answers.py](schedule_all_answers.py)
     1.  [schedule_random_answers.py](schedule_random_answers.py)
+1.  [Tor](tor.md)
 1.  [Bibliography](bibliography.md)
 1.  [Challenge](challenge.md)
 1.  [TODO](TODO.md)

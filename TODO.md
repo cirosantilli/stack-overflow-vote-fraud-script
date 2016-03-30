@@ -1,25 +1,10 @@
 # TODO
 
--   run multiple exit IPs, one per user, in parallel:
-
-    http://stackoverflow.com/questions/14321214/how-to-run-multiple-tor-processes-at-once-with-different-exit-ips
-
-    We currently use 15 minutes per user, which is manageable for small number of users, but not scalable.
-
-    It would also allow to quickly do all votes even if we turn the computer on for a short time each day.
-
-    Just adding multiple:
-
-        SocksPort 9050
-        SocksPort 9052
-
-    to `/etc/tor/torrc` seems to work.
-
 -   Do randomly less votes than exactly 30 per day to make it harder to spot puppets.
 
 -   Create a script that generates good random email password pairs with random lengths between 8 - 12 to help people bootstrap.
 
--   Create an question downvoter just to troll people :-)
+-   Create an question downvoter just to troll people :-) 125 rep needed.
 
 -   avoid passing the full casperjs path to the root user.
 
@@ -40,12 +25,6 @@
 
     Skip all answers to those, as we already do with deleted questions.
 
-    TODO how? The only way on the dump (better) seems to look at the question history. ugly.
+    TODO how? The only way on the dump seems to be to look at the question history. ugly.
 
 -   Unit tests. This would require mocking SO...
-
--   Reuse a schedule across many users.
-
-    Schedulers then just say how many users will use a given schedule.
-
-    Not too important, would just save some memory, and would be harder to say who voted what, as votes would have to be in random order.
