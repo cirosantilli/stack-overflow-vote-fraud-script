@@ -67,6 +67,10 @@ With some training, you can create one puppet every 10 minutes.
 
 Edits to make:
 
+-   add title to bare links. TODO query. Or possibly just go over all posts of an user with many posts who is willing to accept them?
+
+    Example: <http://web.archive.org/web/20180415101049/https://unix.stackexchange.com/users/273376/drakonoved?tab=activity>
+
 -   supertag e.g. `python` to `django`
 
     Query: <http://data.stackexchange.com/stackoverflow/query/edit/392827> Monday 13h GMT, looked at 16 posts, edited 15, added python supertag only + obvious fixes, took 5 minutes, got bootstraped after 15 minutes, stabilized at 27 rep.
