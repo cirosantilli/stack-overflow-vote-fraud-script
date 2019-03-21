@@ -1,5 +1,6 @@
 # Bibliography
 
+-   drama: <https://github.com/cirosantilli/essays/tree/ebabb6d871441a24afa3e7d808dc9ebe9c049ea1#stack-overflow-suspension-for-vote-fraud-script-2019-03-20>
 -   <http://stackoverflow.com/questions/9373438/how-to-design-a-bot-that-gets-reputation-on-stackoverflow>
 -   <http://meta.stackexchange.com/questions/32791/is-there-a-bot-on-stack-overflow>
 -   <http://meta.stackexchange.com/questions/71574/has-anyone-ever-tried-running-an-answer-bot-on-stack-overflow>
